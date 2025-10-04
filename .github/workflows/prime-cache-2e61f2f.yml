@@ -1,37 +1,34 @@
-name: CI with Dependency Caching
+name: Cache Demo
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
+    branches:
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Cache Dependencies
-        uses: actions/cache@v4
-        id: cache-deps
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          path: |
-            node_modules
-            ~/.npm
-          key: ${{ runner.os }}-cache-2e61f2f-${{ hashFiles('**/package-lock.json') }}
+          python-version: '3.11'
 
-      - name: Install Dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: npm ci
+      - name: Cache dependencies
+        id: cache-step
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: cache-2e61f2f
+          restore-keys: |
+            cache-2e61f2f
 
-      - name: Prime Cache State
-        id: prime-cache-2e61f2f
+      - name: prime-cache-2e61f2f
         run: |
-          echo "cache state: ${{ steps.cache-deps.outputs.cache-hit }}"
-          echo "cache_path=${{ steps.cache-deps.outputs.cache-hit }}" >> $GITHUB_OUTPUT
-
-      - name: Run Tests
-        run: npm test
-
+          if [ -n "${{ steps.cache-step.outputs.cache-hit }}" ]; then
+            echo "Cache hit!"
+          else
+            echo "Cache miss!"
+          fi
